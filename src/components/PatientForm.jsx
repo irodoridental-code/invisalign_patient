@@ -66,7 +66,7 @@ export default function PatientForm({ doctors, onSubmit, onCancel, initial = nul
           <input className="f-inp" type="number" value={chart} onChange={e => setChart(e.target.value)} placeholder="1001" min="1" />
         </div>
         <div>
-          <label className="f-lbl">生年月日</label>
+          <label className="f-lbl">生年月日（任意）</label>
           <input className="f-inp" type="date" value={dob} onChange={e => setDob(e.target.value)} />
         </div>
       </div>
