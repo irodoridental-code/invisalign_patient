@@ -5,6 +5,7 @@ function toC(n) { return n >= 1 && n <= 50 ? CIRC[n - 1] : '(' + n + ')' }
 function pad(n) { return n < 10 ? '0' + n : '' + n }
 function fmtDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) }
 
+// アライナー交換日マップを生成
 function buildChangeDates(p) {
   const set = {}
   const start = new Date(p.start)
@@ -17,6 +18,20 @@ function buildChangeDates(p) {
   return set
 }
 
+// IPR処置日 Set を生成
+function buildIprDates(p) {
+  const set = new Set()
+  if (!p.ipr_stages?.length) return set
+  const start = new Date(p.start)
+  if (isNaN(start.getTime())) return set
+  const days = parseInt(p.cyc)
+  p.ipr_stages.forEach(stage => {
+    const d = new Date(start.getTime() + (stage - 1) * days * 86400000)
+    set.add(fmtDate(d))
+  })
+  return set
+}
+
 export default function CalendarModal({ patient: p, visitDates: vd, onClose, onToggleVisit, onSave }) {
   const [year, setYear] = useState(() => {
     const s = new Date(p.start)
@@ -24,6 +39,7 @@ export default function CalendarModal({ patient: p, visitDates: vd, onClose, onT
   })
 
   const changeDates = buildChangeDates(p)
+  const iprDates    = buildIprDates(p)
   const dows = ['日','月','火','水','木','金','土']
 
   function bgClick(e) { if (e.target.id === 'cal-modal-bg') onClose() }
@@ -48,6 +64,7 @@ export default function CalendarModal({ patient: p, visitDates: vd, onClose, onT
 .dc{border-right:1px solid #eee;border-bottom:1px solid #eee;height:34px;overflow:hidden;display:flex;flex-direction:column;background:#fff}
 .dc:nth-child(7n){border-right:none}.dc.em{background:#fafafa}
 .dc.fi{background:#fee2e2}.dc.vi{background:#fef9c3}.dc.ch{background:#dbeafe}
+.dc.ipr{box-shadow:inset 0 0 0 2px #1d4ed8}
 .dn{font-size:6.5px;font-weight:600;color:#555;padding:1px 2px 0;text-align:left;line-height:1.2;flex-shrink:0}
 .dn.sun{color:#dc2626}.dn.sat{color:#2563eb}
 .pl{font-size:6px;font-weight:700;display:block;text-align:center;line-height:1.5;width:100%;flex-shrink:0}
@@ -56,18 +73,19 @@ export default function CalendarModal({ patient: p, visitDates: vd, onClose, onT
 
     for (let m = 0; m < 12; m++) {
       const firstDow = new Date(year, m, 1).getDay()
-      const lastDay = new Date(year, m + 1, 0).getDate()
+      const lastDay  = new Date(year, m + 1, 0).getDate()
       html += `<div class="mb"><div class="mt">${m + 1}月</div><div class="dr">`
       dows.forEach((d, i) => { html += `<div class="dw" style="color:${i===0?'#dc2626':i===6?'#2563eb':'#888'}">${d}</div>` })
       for (let k = 0; k < firstDow; k++) html += '<div class="dc em"></div>'
       for (let day = 1; day <= lastDay; day++) {
-        const ds = year + '-' + pad(m + 1) + '-' + pad(day)
+        const ds  = year + '-' + pad(m + 1) + '-' + pad(day)
         const dow = (firstDow + day - 1) % 7
-        const nc = dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''
-        const vt = vd[ds] || null
+        const nc  = dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''
+        const vt  = vd[ds] || null
         const chg = changeDates[ds] || null
+        const isIpr = iprDates.has(ds)
         const bgc = vt === 'first' ? ' fi' : (vt === 'visit' || vt === 'manual') ? ' vi' : chg ? ' ch' : ''
-        html += `<div class="dc${bgc}"><div class="dn ${nc}">${day}</div>`
+        html += `<div class="dc${bgc}${isIpr ? ' ipr' : ''}"><div class="dn ${nc}">${day}</div>`
         if (vt === 'first') html += '<span class="pl pf">初回</span>'
         else if (vt === 'visit' || vt === 'manual') html += '<span class="pl pv">来院</span>'
         if (chg) html += `<span class="pl pc">${toC(chg)}</span>`
@@ -83,11 +101,11 @@ export default function CalendarModal({ patient: p, visitDates: vd, onClose, onT
 
   const months = Array.from({ length: 12 }, (_, m) => {
     const firstDow = new Date(year, m, 1).getDay()
-    const lastDay = new Date(year, m + 1, 0).getDate()
+    const lastDay  = new Date(year, m + 1, 0).getDate()
     const cells = []
     for (let k = 0; k < firstDow; k++) cells.push({ empty: true, key: 'e' + k })
     for (let day = 1; day <= lastDay; day++) {
-      const ds = year + '-' + pad(m + 1) + '-' + pad(day)
+      const ds  = year + '-' + pad(m + 1) + '-' + pad(day)
       const dow = (firstDow + day - 1) % 7
       cells.push({ day, ds, dow })
     }
@@ -100,8 +118,8 @@ export default function CalendarModal({ patient: p, visitDates: vd, onClose, onT
     <div className="modal-bg" id="cal-modal-bg" style={{zIndex:300}} onClick={bgClick}>
       <div className="modal cal-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-hd">
-          <div id="cal-title" style={{fontSize:'13px',fontWeight:600,color:'#111'}}>{p.name} — スケジュール</div>
-          <div style={{display:'flex',gap:'5px',alignItems:'center'}}>
+          <div style={{fontSize:'13px', fontWeight:600, color:'#111'}}>{p.name} — スケジュール</div>
+          <div style={{display:'flex', gap:'5px', alignItems:'center'}}>
             <button className="btn-sm btn-sm-green" onClick={doPrint}>印刷（A4縦）</button>
             <button className="btn-sm btn-sm-blue" onClick={onSave}>保存</button>
             <button className="m-close" onClick={onClose}>✕</button>
@@ -112,34 +130,61 @@ export default function CalendarModal({ patient: p, visitDates: vd, onClose, onT
             <button className="cal-year-btn" onClick={() => setYear(y => y - 1)}>‹</button>
             <span className="cal-year-lbl">{year}年</span>
             <button className="cal-year-btn" onClick={() => setYear(y => y + 1)}>›</button>
-            <span style={{fontSize:'10px',color:'#999',marginLeft:'4px'}}>日付タップで来院日オン／オフ　保存→次回来院日自動更新</span>
+            <span style={{fontSize:'10px', color:'#999', marginLeft:'4px'}}>日付タップで来院日オン／オフ　保存→次回来院日自動更新</span>
           </div>
-          <div style={{display:'flex',gap:'12px',marginBottom:'8px',fontSize:'10px',flexWrap:'wrap',alignItems:'center'}}>
-            <span style={{display:'flex',alignItems:'center',gap:'4px'}}><span style={{display:'inline-block',width:'12px',height:'12px',background:'#fee2e2',borderRadius:'2px'}}></span><span style={{color:'#dc2626',fontWeight:700}}>初回</span></span>
-            <span style={{display:'flex',alignItems:'center',gap:'4px'}}><span style={{display:'inline-block',width:'12px',height:'12px',background:'#fef9c3',borderRadius:'2px'}}></span><span style={{color:'#b45309',fontWeight:700}}>来院日（タップで設定）</span></span>
-            <span style={{display:'flex',alignItems:'center',gap:'4px'}}><span style={{display:'inline-block',width:'12px',height:'12px',background:'#dbeafe',borderRadius:'2px'}}></span><span style={{color:'#1e40af',fontWeight:700}}>交換日</span></span>
+
+          {/* 凡例 */}
+          <div style={{display:'flex', gap:'12px', marginBottom:'8px', fontSize:'10px', flexWrap:'wrap', alignItems:'center'}}>
+            <span style={{display:'flex', alignItems:'center', gap:'4px'}}>
+              <span style={{display:'inline-block', width:'12px', height:'12px', background:'#fee2e2', borderRadius:'2px'}}></span>
+              <span style={{color:'#dc2626', fontWeight:700}}>初回</span>
+            </span>
+            <span style={{display:'flex', alignItems:'center', gap:'4px'}}>
+              <span style={{display:'inline-block', width:'12px', height:'12px', background:'#fef9c3', borderRadius:'2px'}}></span>
+              <span style={{color:'#b45309', fontWeight:700}}>来院日（タップで設定）</span>
+            </span>
+            <span style={{display:'flex', alignItems:'center', gap:'4px'}}>
+              <span style={{display:'inline-block', width:'12px', height:'12px', background:'#dbeafe', borderRadius:'2px'}}></span>
+              <span style={{color:'#1e40af', fontWeight:700}}>交換日</span>
+            </span>
+            {iprDates.size > 0 && (
+              <span style={{display:'flex', alignItems:'center', gap:'4px'}}>
+                <span style={{display:'inline-block', width:'12px', height:'12px', background:'#fff', border:'2px solid #1d4ed8', borderRadius:'2px'}}></span>
+                <span style={{color:'#1d4ed8', fontWeight:700}}>IPR処置日</span>
+              </span>
+            )}
           </div>
+
+          {/* カレンダー本体 */}
           <div className="cal-months-grid">
             {months.map(({ m, cells }) => (
               <div key={m} className="cal-month-box">
                 <div className="cal-month-title">{m + 1}月</div>
                 <div className="cal-dow-row">
-                  {dows.map((d, i) => <div key={i} className="cal-dow-cell" style={{color:i===0?'#dc2626':i===6?'#2563eb':'#888'}}>{d}</div>)}
+                  {dows.map((d, i) => (
+                    <div key={i} className="cal-dow-cell" style={{color:i===0?'#dc2626':i===6?'#2563eb':'#888'}}>{d}</div>
+                  ))}
                 </div>
                 <div className="cal-day-row">
                   {cells.map((cell, idx) => {
                     if (cell.empty) return <div key={cell.key || idx} className="cal-day-cell empty" />
                     const { day, ds, dow } = cell
-                    const nc = dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''
-                    const vt = vd[ds] || null
-                    const chg = changeDates[ds] || null
+                    const nc    = dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''
+                    const vt    = vd[ds] || null
+                    const chg   = changeDates[ds] || null
+                    const isIpr = iprDates.has(ds)
                     const bgCls = vt === 'first' ? ' bg-first' : (vt === 'visit' || vt === 'manual') ? ' bg-visit' : chg ? ' bg-chg' : ''
                     return (
-                      <div key={ds} className={'cal-day-cell' + bgCls} onClick={() => onToggleVisit(ds)}>
+                      <div
+                        key={ds}
+                        className={'cal-day-cell' + bgCls}
+                        style={isIpr ? {outline:'2px solid #1d4ed8', outlineOffset:'-2px'} : undefined}
+                        onClick={() => onToggleVisit(ds)}
+                      >
                         <div className={'cal-day-num ' + nc}>{day}</div>
                         {vt === 'first' && <span className="cal-ev ev-first">初回</span>}
                         {(vt === 'visit' || vt === 'manual') && <span className="cal-ev ev-visit">来院</span>}
-                        {chg && <span className="cal-ev ev-chg">{chg}</span>}
+                        {chg && <span className="cal-ev ev-chg">{toC(chg)}</span>}
                       </div>
                     )
                   })}
