@@ -210,7 +210,13 @@ export default function App() {
     await fetchRecalcHistory()
     showToast('再計算履歴をリセットしました')
   }
-
+// ── 患者削除 ──
+  async function deletePatient(id) {
+    const { error } = await supabase.from('patients').delete().eq('id', id)
+    if (error) { showToast('削除に失敗しました'); return false }
+    showToast('患者を削除しました')
+    return true
+  }
   // ── 担当医CRUD ──
   async function addDoctor(name) {
     const { error } = await supabase.from('doctors').insert([{ name, sort_order: doctors.length }])
@@ -277,6 +283,7 @@ export default function App() {
             onOpenModal={p => setModalPatient(p)}
             onOpenCal={p => { setCalPatient(p) }}
             onOpenAddAligner={p => { setCalPatient(p) }}
+            onDelete={async (id) => { await deletePatient(id) }}
           />
         )}
         {!loading && page === 'add' && (
