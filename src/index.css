@@ -166,3 +166,18 @@ input, textarea, select { font-family: inherit; }
   @page { size:A4 portrait; margin:0; }
 }
 #print-area { display:none; }
+
+/* 再計算前の交換日 */
+.cal-day-cell.bg-chg-old{background:#f1f5f9}
+.ev-chg-old{color:#94a3b8}
+
+/* オレンジ系ボタン（再計算） */
+.btn-sm-orange{padding:4px 8px;font-size:11px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;cursor:pointer;color:#c2410c;font-weight:600;white-space:nowrap}
+.btn-sm-orange:hover{background:#ffedd5}
+
+/* 追加アライナーバッジ */
+.b-add{background:#e5e7eb;color:#374151}
+
+/* フォーム中央配置 */
+.form-center{display:flex;justify-content:center;padding:8px 0}
+.form-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:18px;width:100%;max-width:560px}
