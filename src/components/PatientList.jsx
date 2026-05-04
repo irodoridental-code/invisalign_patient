@@ -14,7 +14,7 @@ function getNext(p, visitDates) {
   return Object.keys(vd).filter(k => (vd[k]==='visit'||vd[k]==='manual') && k >= today).sort()[0] || ''
 }
 
-export default function PatientList({ patients, visitDates={}, onOpenModal, onOpenCal, onOpenAddAligner }) {
+export default function PatientList({ patients, visitDates={}, onOpenModal, onOpenCal, onOpenAddAligner, onDelete }) {
   const [tab, setTab]   = useState('all')
   const [q, setQ]       = useState('')
   const [sKey, setSKey] = useState('chart')
@@ -111,6 +111,7 @@ export default function PatientList({ patients, visitDates={}, onOpenModal, onOp
                 <button className="btn-sm" onClick={e=>{e.stopPropagation();onOpenModal(p)}}>編集</button>
                 <button className="btn-sm-green" onClick={e=>{e.stopPropagation();onOpenCal(p)}}>📅</button>
                 <button className="btn-sm-gray" onClick={e=>{e.stopPropagation();onOpenAddAligner(p)}}>＋追加アライナー</button>
+                <button className="btn-sm" style={{color:'#dc2626',borderColor:'#fca5a5'}} onClick={e=>{e.stopPropagation();if(confirm(p.name+'を削除しますか？この操作は取り消せません。'))onDelete(p.id)}}>削除</button>
               </div>
             </div>
           )
