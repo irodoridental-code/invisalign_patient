@@ -162,10 +162,9 @@ input, textarea, select { font-family: inherit; }
 @media print {
   body * { visibility:hidden !important; }
   #print-area, #print-area * { visibility:visible !important; }
-  #print-area { position:fixed !important; inset:0 !important; background:#fff !important; padding:5mm !important; display:block !important; }
+  #print-area { position:fixed !important; inset:0 !important; background:#fff !important; padding:4mm !important; display:block !important; width:210mm !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
   @page { size:A4 portrait; margin:0; }
 }
-#print-area { display:none; }
 
 /* 再計算前の交換日 */
 .cal-day-cell.bg-chg-old{background:#f1f5f9}
@@ -176,7 +175,7 @@ input, textarea, select { font-family: inherit; }
 .btn-sm-orange:hover{background:#ffedd5}
 
 /* 追加アライナーバッジ */
-.b-add{background:#e5e7eb;color:#374151}
+.b-add{background:#e5e7eb;color:#374151;font-family:sans-serif;}
 
 /* フォーム中央配置 */
 .form-center{display:flex;justify-content:center;padding:8px 0}
